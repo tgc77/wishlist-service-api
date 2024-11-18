@@ -129,7 +129,6 @@ class ServiceGatewayAPIClientsRouter:
         auth_header: ClientAccessAuthorizationHeader
     ):
         try:
-            # TODO testar aqui
             new_client = ClientRegister.model_validate(create_client)
             api_request: httpx.AsyncClient = request.app.api_request
             response = await api_request.post(

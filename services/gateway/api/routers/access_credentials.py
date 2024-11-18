@@ -25,10 +25,7 @@ class GatewayAPIAccessCredentialsRoutes:
 
 access_credentials_router = APIRouter(
     prefix=GatewayAPIAccessCredentialsRoutes.prefix,
-    tags=GatewayAPIAccessCredentialsRoutes.tags,
-    dependencies=[
-        Depends(validate_access_credetials_as_admin)
-    ]
+    tags=GatewayAPIAccessCredentialsRoutes.tags
 )
 
 
@@ -107,7 +104,10 @@ class ServiceGatewayAPIAccessCredentialsRouter:
 
     @access_credentials_router.delete(
         GatewayAPIAccessCredentialsRoutes.delete,
-        response_model=ServiceProviderResponse
+        response_model=ServiceProviderResponse,
+        dependencies=[
+            Depends(validate_access_credetials_as_admin)
+        ]
     )
     async def delete_access_credentials(
         self,
