@@ -598,7 +598,7 @@ gateway-1            | INFO:     127.0.0.1:44360 - "GET /api/gateway/healthcheck
 (products-1, client-1 and favorite_products-1) will show up similar messages as gateway-1 container
 
 ###  Usage
-1. Access the swagger docs web page to interact with the API: http://0.0.0.0:8080/docs
+1. Access the swagger docs web page to interact with the API: http://0.0.0.0:8080/docs or http://0.0.0.0:8080/redoc
 
 2. To be able to acess the endpoints you will need to authenticate and get your access credentials.
 
