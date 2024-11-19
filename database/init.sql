@@ -70,5 +70,5 @@ INSERT INTO tb_api_client (email, name) VALUES ('api.client@gmail.com', 'API Cli
 
 INSERT INTO tb_api_access_credentials (client_id, email, username, active, scope, password)
 VALUES 
-	(1, 'api.admin@gmail.com', 'api.admin', 1, 'admin', '$2b$12$i/xV7x3xop942U7Wulya1OQ11wFWYThIPekthQ67e6HO0aXzGuGOO'),
-	(2, 'api.client@gmail.com', 'api.client', 1, 'client', '$2b$12$KSYM4/w4dQscZXbMv9Av.OThVte8DySKF7JwI79BJvLuSl9B2HqbG')
+	(1, 'api.admin@gmail.com', 'api.admin', 1, 'admin', '$2b$12$2dvIFcyY5WzAbFayaw6EBeX9ldcD/knNX3AB2JYDaQJRw/lfWEjoW'),
+	(2, 'api.client@gmail.com', 'api.client', 1, 'client', '$2b$12$5QqcXiCFaaxXcUjOQekXL.Jvsmwu7XbgdmQsMnq8pJO/R3Q1hme2O')
