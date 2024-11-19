@@ -41,11 +41,11 @@
 
 ##  Features
 
-<code>❯ The API Gateway also provides managment of client's, products as access credentials.</code>
+<code>❯ The API Gateway also provides managment of client's, products and access credentials.</code>
 
 ---
 
-##  Project Structure
+##  Services APIs Structure
 
 ```sh
 └── services/
@@ -564,7 +564,42 @@ Install services using the following method:
 ❯ git clone https://github.com/tgc77/wishlist-service-api.git
 ```
 
-2. Enter directory root (whishlist) and rum make command:
+2. Enter directory root (whishlist):
+
+### Create an .env file with the content bellow:
+```log
+# Prod
+MYSQL_USERNAME='api.admin'
+MYSQL_ROOT_PASSWORD='Api.root#2024'
+MYSQL_PASSWORD='Api.admin#2024'
+MYSQL_HOST='luizalabsdb'
+MYSQL_PORT='3306'
+MYSQL_DATABASE='luizalabs_db'
+DATABASE_CONNECTION_URI="mysql+aiomysql://{DB_USERNAME}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
+
+CLIENTS_SERVICE_URL='http://127.0.0.1:8000'
+CLIENTS_ROUTE_PREFIX='/api/v1/clients'
+PRODUCTS_SERVICE_URL='http://127.0.0.1:8001'
+PRODUCTS_ROUTE_PREFIX='/api/v1/products'
+FAVORITE_PRODUCTS_SERVICE_URL='http://127.0.0.1:8002'
+FAVORITE_PRODUCTS_ROUTE_PREFIX='/api/v1/favorite_products'
+API_GATEWAY_SERVICE_URL='http://127.0.0.1:8080'
+ACCESS_CREDENTIALS_PREFIX='/api/access/credentials'
+
+# to get a string like this run:
+# openssl rand -hex 32
+SECRET_KEY = "96ae61fd61aac0dc59e5b727386c548f1fb91e82f82428328577b1f338372de1"
+HASH_ALGORITHM = "HS256"
+ACCESS_TOKEN_EXPIRE_MINUTES = 3600
+ACCESS_AUTHENTICATION_SCOPES='{"admin": "API manager. Can access all endpoints and API functionalities", "client": "Customer access. Can create one account, fetch products and create a favorite products list"}'
+HTTP_REQUEST_TIMEOUT=360
+```
+
+### Attempt to the flag SECRET_KEY:
+You can generate a new one running the command:
+```sh
+❯ openssl rand -hex 32
+```
 
 **Using `docker`** &nbsp; [<img align="center" src="https://img.shields.io/badge/Docker-2CA5E0.svg?style={badge_style}&logo=docker&logoColor=white" />](https://www.docker.com/)
 ```sh
