@@ -1,5 +1,7 @@
 
 from typing import Optional
+import zlib
+from base64 import urlsafe_b64decode as b64dec
 
 import jwt
 from fastapi import HTTPException, status, Request
@@ -22,7 +24,9 @@ class JWTBearerAuth(HTTPBearer):
                     detail="Invalid authentication scheme."
                 )
             token = credentials.credentials
-            if not self.validate_token(token):
+            current_user = self.decode_x_auth_data(request)
+
+            if not self.validate_token(token, current_user):
                 raise HTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,
                     detail="Invalid token or expired token."
@@ -31,7 +35,13 @@ class JWTBearerAuth(HTTPBearer):
         else:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Invalid authorization code.")
 
-    def validate_token(self, token: str) -> bool:
+    def decode_x_auth_data(self, request: Request) -> str:
+        encoded_auth_data = request.headers.get('X-auth-data')
+        decoded_auth_data = zlib.decompress(b64dec(encoded_auth_data))
+        current_user = decoded_auth_data.decode('utf-8')
+        return current_user
+
+    def validate_token(self, token: str, current_user: str) -> bool:
         credentials_exception = HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Could not validate credentials",
@@ -39,11 +49,17 @@ class JWTBearerAuth(HTTPBearer):
         )
         try:
             decoded_token = jwt.decode(
-                token, APIConfig.SECRET_KEY, algorithms=[
-                    APIConfig.HASH_ALGORITHM]
+                token,
+                APIConfig.SECRET_KEY,
+                algorithms=[
+                    APIConfig.HASH_ALGORITHM
+                ]
             )
             username: str = decoded_token.get("sub")
             if username is None:
+                raise credentials_exception
+
+            if username != current_user:
                 raise credentials_exception
 
             return True
