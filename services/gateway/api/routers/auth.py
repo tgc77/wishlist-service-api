@@ -1,7 +1,7 @@
 from typing import Annotated
 from datetime import timedelta
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Request
 from fastapi.security import OAuth2PasswordRequestForm
 
 from api.core.settings import APIConfig
@@ -16,6 +16,7 @@ auth_router = APIRouter(
 
 @auth_router.post("/auth")
 async def login_for_access_token(
+    request: Request,
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
     session: AsyncSession = Depends(get_async_session)
 ) -> Token:
@@ -36,4 +37,5 @@ async def login_for_access_token(
         data={"sub": user.username, "scopes": form_data.scopes},
         expires_delta=access_token_expires
     )
+    setattr(request.app, 'current_user', user.username)
     return Token(access_token=access_token, token_type="bearer")
