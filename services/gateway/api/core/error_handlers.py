@@ -98,7 +98,7 @@ async def request_validation_error_handler(request: Request, exc: RequestValidat
     FastAPI wrapper for RequestValidationException handler when API could not catch them.
     This function will be called when client input is not valid.
     """
-    logger.debug("request_validation_error_handler was invoked")
+    logger.info("request_validation_error_handler was invoked")
     body = await request.body()
     query_params = request.query_params._dict
     detail = {"errors": exc.errors(), "body": body.decode(),
@@ -112,7 +112,7 @@ async def http_error_handler(request: Request, exc: HTTPException) -> Union[JSON
     FastAPI wrapper to hendler HTTPException events when API could not catch them.
     This function will be called when a HTTPException is explicitly raised.
     """
-    logger.debug("http_exception_handler was invoked")
+    logger.info("http_exception_handler was invoked")
     return await http_exception_handler(request, exc)
 
 
@@ -121,12 +121,11 @@ async def unhandled_error_handler(request: Request, exc: Exception) -> PlainText
     Unhandled exceptions will be logged, sush as HTTPExceptions or RequestValidationErrors
     when API could not catch them.
     """
-    logger.debug("unhandled_exception_handler was invoked")
     host = getattr(getattr(request, "client", None), "host", None)
     port = getattr(getattr(request, "client", None), "port", None)
     url = f"{request.url.path}?{
         request.query_params}" if request.query_params else request.url.path
-    exception_type, exception_value, exception_traceback = sys.exc_info()
+    exception_type, exception_value, _ = sys.exc_info()
     exception_name = getattr(exception_type, "__name__", None)
     logger.error(
         f"{host}:{port} - {request.method} {url} 500 Internal Server Error "

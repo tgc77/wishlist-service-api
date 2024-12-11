@@ -16,4 +16,4 @@ RUN apt-get -y update && apt-get -y install curl
 RUN adduser -u 5678 --disabled-password --gecos "" apiuser && chown -R apiuser /api
 USER apiuser
 
-CMD ["fastapi", "run", "main.py", "--port", "8080"]
+CMD ["./run.sh"]

@@ -37,5 +37,5 @@ async def login_for_access_token(
         data={"sub": user.username, "scopes": form_data.scopes},
         expires_delta=access_token_expires
     )
-    setattr(request.app, 'current_user', user.username)
+    request.app.state.current_user = user.username
     return Token(access_token=access_token, token_type="bearer")

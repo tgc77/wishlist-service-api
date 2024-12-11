@@ -1,6 +1,6 @@
 
 import uuid as uuid_pkg
-from typing import List, Optional
+from typing import Optional
 from fastapi import Depends, status, APIRouter
 from fastapi_utils.cbv import cbv
 
@@ -17,22 +17,13 @@ from api.core.logger import logger
 from api.core.repositories.product import ProductRepository
 from api.core.response import ServiceProviderResponse
 from api.core.settings import APIConfig
+from .route_mapper import ServiceApiRouteMapper
 
-
-class ProductsAPIRoutes:
-    prefix: str = APIConfig.PRODUCTS_ROUTE_PREFIX
-    tags: List = ["Products"]
-    get_products: str = '/'
-    get_products_by_id: str = '/{id}'
-    review: str = '/{id}/review'
-    register: str = '/register'
-    update: str = '/update/{id}'
-    delete: str = '/delete/{id}'
-
+products_routes_mapper = ServiceApiRouteMapper.load_from_apiconfig(APIConfig.PRODUCTS_ROUTES_MAPPER)
 
 products_router = APIRouter(
-    prefix=ProductsAPIRoutes.prefix,
-    tags=ProductsAPIRoutes.tags,
+    prefix=APIConfig.PRODUCTS_ROUTE_PREFIX,
+    tags=products_routes_mapper.tags,
     dependencies=[Depends(JWTBearerAuth())]
 )
 
@@ -42,7 +33,7 @@ class ServiceProductsAPIRouter:
     session: AsyncSession = Depends(get_async_session)
 
     @products_router.get(
-        ProductsAPIRoutes.get_products,
+        products_routes_mapper.get_all,
         response_model=ServiceProviderResponse
     )
     async def get_products(
@@ -55,11 +46,13 @@ class ServiceProductsAPIRouter:
                 limit=limit,
                 offset=offset
             )
-            products_metada = ProductsMetadata(page=dict(
-                limit=limit,
-                offset=offset,
-                count=len(products)
-            ))
+            products_metada = ProductsMetadata(
+                page=dict(
+                    limit=limit,
+                    offset=offset,
+                    count=len(products)
+                )
+            )
             favorite_producst_view = FavoriteProductsView(
                 meta=products_metada,
                 results=products
@@ -71,7 +64,7 @@ class ServiceProductsAPIRouter:
             return await ServiceProviderResponse.from_exception(exception=ex)
 
     @products_router.get(
-        ProductsAPIRoutes.get_products_by_id,
+        products_routes_mapper.get_by,
         response_model=ServiceProviderResponse
     )
     async def get_product_by_id(
@@ -83,7 +76,7 @@ class ServiceProductsAPIRouter:
             link_product_review = "/".join([
                 APIConfig.API_GATEWAY_SERVICE_URL,
                 'products',
-                ProductsAPIRoutes.review.format(id=product.id)
+                products_routes_mapper.review.format(id=product.id)
             ])
             product_json = product.model_dump(exclude={'id', 'price'})
             product_review = ProductReview(
@@ -100,7 +93,7 @@ class ServiceProductsAPIRouter:
             return await ServiceProviderResponse.from_exception(exception=ex)
 
     @products_router.get(
-        ProductsAPIRoutes.review,
+        products_routes_mapper.review,
         response_model=ServiceProviderResponse
     )
     async def get_product_review(
@@ -118,7 +111,7 @@ class ServiceProductsAPIRouter:
             return await ServiceProviderResponse.from_exception(exception=ex)
 
     @products_router.post(
-        ProductsAPIRoutes.register,
+        products_routes_mapper.create,
         response_model=ServiceProviderResponse
     )
     async def register_product(
@@ -140,7 +133,7 @@ class ServiceProductsAPIRouter:
             return await ServiceProviderResponse.from_exception(exception=ex)
 
     @products_router.patch(
-        ProductsAPIRoutes.update,
+        products_routes_mapper.update,
         response_model=ServiceProviderResponse
     )
     async def update_product(
@@ -162,7 +155,7 @@ class ServiceProductsAPIRouter:
             return await ServiceProviderResponse.from_exception(exception=ex)
 
     @products_router.delete(
-        ProductsAPIRoutes.delete,
+        products_routes_mapper.delete,
         response_model=ServiceProviderResponse
     )
     async def delete_product(

@@ -6,7 +6,6 @@ from fastapi.exceptions import RequestValidationError
 from contextlib import asynccontextmanager
 
 from api.routers.favorite_products import favorite_products_router
-from api.core.settings import APIConfig
 from api.core.error_handlers import (
     request_validation_error_handler,
     http_error_handler,

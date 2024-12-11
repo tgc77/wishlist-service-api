@@ -6,7 +6,9 @@ services:
       - 8080:8080
     depends_on:
       database:
-          condition: service_healthy
+        condition: service_healthy
+      rabbit:
+        condition: service_healthy
     links:
       - database
     env_file:
@@ -72,6 +74,16 @@ services:
         test: ["CMD", "mysqladmin" ,"ping", "-h", "127.0.0.1"]
         timeout: 20s
         retries: 10
+
+  rabbit:
+    image: rabbitmq:4-management
+    restart: on-failure
+    hostname: rabbit
+    ports:
+        - '5672:5672'
+        - '15672:15672'
+    env_file:
+      - .env
 
 volumes:
   database:

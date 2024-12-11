@@ -12,10 +12,14 @@ from api.core.logger import logger
 from api.core.repositories.client import ClientRepository
 from api.core.response import ServiceProviderResponse
 from api.core.settings import APIConfig
+from .route_mapper import ServiceApiRouteMapper
+
+
+clients_routes_mapper = ServiceApiRouteMapper.load_from_apiconfig(APIConfig.CLIENTS_ROUTES_MAPPER)
 
 clients_router = APIRouter(
     prefix=APIConfig.CLIENTS_ROUTE_PREFIX,
-    tags=["Clients"]
+    tags=clients_routes_mapper.tags
 )
 
 
@@ -24,7 +28,7 @@ class ServiceClientsAPIRouter:
     session: AsyncSession = Depends(get_async_session)
 
     @clients_router.get(
-        '/',
+        clients_routes_mapper.get_all,
         response_model=ServiceProviderResponse,
         dependencies=[Depends(JWTBearerAuth())]
     )
@@ -39,7 +43,7 @@ class ServiceClientsAPIRouter:
             return await ServiceProviderResponse.from_exception(exception=ex)
 
     @clients_router.get(
-        '/{id}',
+        clients_routes_mapper.get_by,
         response_model=ServiceProviderResponse,
         dependencies=[Depends(JWTBearerAuth())]
     )
@@ -53,7 +57,7 @@ class ServiceClientsAPIRouter:
             return await ServiceProviderResponse.from_exception(exception=ex)
 
     @clients_router.post(
-        '/register',
+        clients_routes_mapper.create,
         response_model=ServiceProviderResponse
     )
     async def register_client(self, client_register: ClientRegister):
@@ -70,7 +74,7 @@ class ServiceClientsAPIRouter:
             return await ServiceProviderResponse.from_exception(exception=ex)
 
     @clients_router.patch(
-        '/update/{id}',
+        clients_routes_mapper.update,
         response_model=ServiceProviderResponse
     )
     async def update_client(self, id: int, client_update: ClientUpdate):
@@ -86,7 +90,7 @@ class ServiceClientsAPIRouter:
             return await ServiceProviderResponse.from_exception(exception=ex)
 
     @clients_router.delete(
-        '/delete/{id}',
+        clients_routes_mapper.delete,
         response_model=ServiceProviderResponse,
         dependencies=[Depends(JWTBearerAuth())]
     )

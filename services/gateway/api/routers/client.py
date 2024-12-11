@@ -1,10 +1,7 @@
-from typing import List
-from fastapi import Request, APIRouter
+from fastapi import Request
 from fastapi_utils.cbv import cbv
-import httpx
 
 from api.core.settings import APIConfig
-from api.core.logger import logger
 from api.core.response import APIGatwayProviderResponse
 from api.core.security.user_authenticator import (
     AdminAccessAuthorizationHeader,
@@ -14,57 +11,28 @@ from api.core.entities.client import (
     ClientRegister,
     ClientUpdate,
 )
-
-
-class GatewayAPIClientsRoutes:
-    prefix: str = '/clients'
-    tags: List = ["Clients"]
-    get_all: str = '/'
-    get_by_id: str = '/{id}'
-    register: str = '/register'
-    update: str = '/update/{id}'
-    delete: str = '/delete/{id}'
-
-
-clients_router = APIRouter(
-    prefix=GatewayAPIClientsRoutes.prefix,
-    tags=GatewayAPIClientsRoutes.tags
+from .router_dispatcher import (
+    RequestRouterDispatcher,
+    ServiceApiRouter,
+    GatewayApiRouter
 )
+
+gateway_router = GatewayApiRouter.load_from_apiconfig(APIConfig.CLIENTS_ROUTES_MAPPER)
+
+service_router = ServiceApiRouter(
+    gateway_router=gateway_router,
+    service_url=APIConfig.CLIENTS_SERVICE_URL,
+    service_route_prefix=APIConfig.CLIENTS_ROUTE_PREFIX
+)
+
+clients_router = service_router.get_app_api_router()
 
 
 @cbv(clients_router)
-class ServiceGatewayAPIClientsRouter:
-
-    def __init__(self):
-        self.service_url: str = APIConfig.CLIENTS_SERVICE_URL
-        self.route_prefix: str = APIConfig.CLIENTS_ROUTE_PREFIX
-        self.get_clients_path = "{service_url}{route_prefix}" + GatewayAPIClientsRoutes.get_all
-        self.get_client_by_id_path = "{service_url}{route_prefix}" + GatewayAPIClientsRoutes.get_by_id
-        self.get_register_client_path = "{service_url}{route_prefix}" + GatewayAPIClientsRoutes.register
-        self.get_update_client_by_id_path = "{service_url}{route_prefix}" + GatewayAPIClientsRoutes.update
-        self.get_delete_client_by_id_path = "{service_url}{route_prefix}" + GatewayAPIClientsRoutes.delete
-
-    def build_route_path(self, route_path: str, **param):
-        param.update({'service_url': self.service_url.rstrip('/'), 'route_prefix': self.route_prefix})
-        return route_path.format(**param)
-
-    def get_clients_route(self) -> str:
-        return self.build_route_path(route_path=self.get_clients_path)
-
-    def get_client_by_id_route(self, **param) -> str:
-        return self.build_route_path(route_path=self.get_client_by_id_path, **param)
-
-    def get_register_client_route(self) -> str:
-        return self.build_route_path(route_path=self.get_register_client_path)
-
-    def get_update_client_by_id_route(self, **param) -> str:
-        return self.build_route_path(route_path=self.get_update_client_by_id_path, **param)
-
-    def get_delete_client_by_id_route(self, **param) -> str:
-        return self.build_route_path(route_path=self.get_delete_client_by_id_path, **param)
+class APIClientsRouter:
 
     @clients_router.get(
-        GatewayAPIClientsRoutes.get_all,
+        gateway_router.get_all,
         response_model=APIGatwayProviderResponse
     )
     async def get_clients(
@@ -72,26 +40,14 @@ class ServiceGatewayAPIClientsRouter:
         request: Request,
         auth_header: AdminAccessAuthorizationHeader
     ):
-        try:
-            api_request: httpx.AsyncClient = request.app.api_request
-            response = await api_request.get(
-                self.get_clients_route(),
-                headers=auth_header,
-                timeout=APIConfig.HTTP_REQUEST_TIMEOUT
-            )
-            response.raise_for_status()
-            logger.info(f"Ouieh! Got response with success")
-            return await APIGatwayProviderResponse.from_response(
-                response=response
-            )
-        except Exception as ex:
-            logger.error(f"Oops! Got some trouble here: {ex}")
-            return await APIGatwayProviderResponse.from_exception(
-                exception=ex
-            )
+        get_all_router = service_router.get_route_parameters_mapper(gateway_router.get_all)
+        get_all_router.auth_header = auth_header
+        return await RequestRouterDispatcher(request).get(
+            get_all_router
+        )
 
     @clients_router.get(
-        GatewayAPIClientsRoutes.get_by_id,
+        gateway_router.get_by,
         response_model=APIGatwayProviderResponse
     )
     async def get_client_by_id(
@@ -100,26 +56,15 @@ class ServiceGatewayAPIClientsRouter:
         id: int,
         auth_header: AdminAccessAuthorizationHeader
     ):
-        try:
-            api_request: httpx.AsyncClient = request.app.api_request
-            response = await api_request.get(
-                self.get_client_by_id_route(id=id),
-                headers=auth_header,
-                timeout=APIConfig.HTTP_REQUEST_TIMEOUT
-            )
-            response.raise_for_status()
-            logger.info(f"Ouieh! Got response with success")
-            return await APIGatwayProviderResponse.from_response(
-                response=response
-            )
-        except Exception as ex:
-            logger.error(f"Oops! Got some trouble here: {ex}")
-            return await APIGatwayProviderResponse.from_exception(
-                exception=ex
-            )
+        get_by_router = service_router.get_route_parameters_mapper(gateway_router.get_by)
+        get_by_router.auth_header = auth_header
+        get_by_router.params = dict(id=id)
+        return await RequestRouterDispatcher(request).get_by(
+            get_by_router
+        )
 
     @clients_router.post(
-        GatewayAPIClientsRoutes.register,
+        gateway_router.create,
         response_model=APIGatwayProviderResponse
     )
     async def register_client(
@@ -128,28 +73,15 @@ class ServiceGatewayAPIClientsRouter:
         create_client: ClientRegister,
         auth_header: ClientAccessAuthorizationHeader
     ):
-        try:
-            new_client = ClientRegister.model_validate(create_client)
-            api_request: httpx.AsyncClient = request.app.api_request
-            response = await api_request.post(
-                self.get_register_client_route(),
-                json=new_client.model_dump(),
-                timeout=APIConfig.HTTP_REQUEST_TIMEOUT,
-                headers=auth_header
-            )
-            response.raise_for_status()
-            logger.info(f"Ouieh! Got response with success")
-            return await APIGatwayProviderResponse.from_response(
-                response=response
-            )
-        except Exception as ex:
-            logger.error(f"Oops! Got some trouble here: {ex}")
-            return await APIGatwayProviderResponse.from_exception(
-                exception=ex
-            )
+        create_router = service_router.get_route_parameters_mapper(gateway_router.create)
+        create_router.auth_header = auth_header
+        create_router.dispatched_data = create_client
+        return await RequestRouterDispatcher(request).create(
+            create_router
+        )
 
     @clients_router.patch(
-        GatewayAPIClientsRoutes.update,
+        gateway_router.update,
         response_model=APIGatwayProviderResponse
     )
     async def update_client(
@@ -157,30 +89,18 @@ class ServiceGatewayAPIClientsRouter:
         request: Request,
         id: int,
         update_client: ClientUpdate,
-        auth_header: AdminAccessAuthorizationHeader
+        auth_header: ClientAccessAuthorizationHeader
     ):
-        try:
-            client_data = ClientUpdate.model_validate(update_client)
-            api_request: httpx.AsyncClient = request.app.api_request
-            response = await api_request.patch(
-                self.get_update_client_by_id_route(id=id),
-                json=client_data.model_dump(),
-                timeout=APIConfig.HTTP_REQUEST_TIMEOUT,
-                headers=auth_header
-            )
-            response.raise_for_status()
-            logger.info(f"Ouieh! Got response with success")
-            return await APIGatwayProviderResponse.from_response(
-                response=response
-            )
-        except Exception as ex:
-            logger.error(f"Oops! Got some trouble here: {ex}")
-            return await APIGatwayProviderResponse.from_exception(
-                exception=ex
-            )
+        update_router = service_router.get_route_parameters_mapper(gateway_router.update)
+        update_router.auth_header = auth_header
+        update_router.dispatched_data = update_client
+        update_router.params = dict(id=id)
+        return await RequestRouterDispatcher(request).update(
+            update_router
+        )
 
     @clients_router.delete(
-        GatewayAPIClientsRoutes.delete,
+        gateway_router.delete,
         response_model=APIGatwayProviderResponse
     )
     async def delete_client(
@@ -189,20 +109,9 @@ class ServiceGatewayAPIClientsRouter:
         id: int,
         auth_header: AdminAccessAuthorizationHeader
     ):
-        try:
-            api_request: httpx.AsyncClient = request.app.api_request
-            response = await api_request.delete(
-                self.get_delete_client_by_id_route(id=id),
-                timeout=APIConfig.HTTP_REQUEST_TIMEOUT,
-                headers=auth_header
-            )
-            response.raise_for_status()
-            logger.info(f"Ouieh! Got response with success")
-            return await APIGatwayProviderResponse.from_response(
-                response=response
-            )
-        except Exception as ex:
-            logger.error(f"Oops! Got some trouble here: {ex}")
-            return await APIGatwayProviderResponse.from_exception(
-                exception=ex
-            )
+        delete_router = service_router.get_route_parameters_mapper(gateway_router.delete)
+        delete_router.auth_header = auth_header
+        delete_router.params = dict(id=id)
+        return await RequestRouterDispatcher(request).delete(
+            delete_router
+        )

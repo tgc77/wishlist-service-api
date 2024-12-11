@@ -1,7 +1,8 @@
 
 import httpx
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
+from starlette.middleware.base import BaseHTTPMiddleware
 
 from contextlib import asynccontextmanager
 
@@ -16,6 +17,8 @@ from api.core.error_handlers import (
     http_error_handler,
     unhandled_error_handler
 )
+
+from api.routers.router_dispatcher import APIServiceRouterManager
 
 
 @asynccontextmanager
@@ -46,18 +49,41 @@ app = FastAPI(
     lifespan=api_initializer
 )
 
+
+class InjectCurrentUserMiddleware(BaseHTTPMiddleware):
+
+    async def dispatch(self, request: Request, call_next):
+
+        # TODO: remove it,just for testing
+        # app.state.current_user = 'tiago'
+
+        response = await call_next(request)
+
+        if not hasattr(app.state, 'current_user'):
+            if hasattr(request.app.state, 'current_user'):
+                app.state.current_user = request.app.state.current_user
+
+        return response
+
+
+app.add_middleware(InjectCurrentUserMiddleware)
+
 app.include_router(clients_router)
 app.include_router(products_router)
 app.include_router(favorite_products_router)
 app.include_router(access_credentials_router)
 app.include_router(auth_router)
 
-app.add_exception_handler(RequestValidationError,
-                          request_validation_error_handler)
+app.add_exception_handler(RequestValidationError, request_validation_error_handler)
 app.add_exception_handler(HTTPException, http_error_handler)
 app.add_exception_handler(Exception, unhandled_error_handler)
 
 
 @app.get("/api/gateway/healthchecker")
-def root():
+def health_checker():
     return {"message": "API is on!"}
+
+
+# GatewayAPIServiceRouterManager(app=app).register_api_service_router(
+#     api_service_router=APIClientsRouter()
+# )

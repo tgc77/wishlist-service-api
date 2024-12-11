@@ -1,11 +1,9 @@
-from typing import List
 from fastapi import Depends, status, APIRouter
 from fastapi_utils.cbv import cbv
 import uuid as uuid_pkg
 
 from api.core.entities.favorite_products import (
     FavoriteProductsRegister,
-    FavoriteProductsRemove,
     FavoriteProductsListView,
     FavoriteProductView
 )
@@ -15,24 +13,16 @@ from api.core.logger import logger
 from api.core.repositories.favorite_products import FavoriteProductsRepository
 from api.core.response import ServiceProviderResponse
 from api.core.settings import APIConfig
-
-# TODO remover daqui
-from api.core.utils import ipdb_set_trace
+from .route_mapper import ServiceApiRouteMapper
 
 
-class FavoriteProductsAPIRoutes:
-    prefix: str = APIConfig.FAVORITE_PRODUCTS_ROUTE_PREFIX
-    tags: List = ["Favorite Products"]
-    get_favorite_products_list: str = '/{client_id}'
-    get_favorite_product_from_list: str = '/get-from-list/{client_id}/{product_id}'
-    include_favorite_product_to_list: str = '/include-to-list'
-    remove_favorite_product_from_list: str = '/remove-from-list/{client_id}/{product_id}'
-    delete_favorite_products_list: str = '/delete/{client_id}/remove-from-list'
-
+favorite_products_routes_mapper = ServiceApiRouteMapper.load_from_apiconfig(
+    APIConfig.FAVORITE_PRODUCTS_ROUTES_MAPPER
+)
 
 favorite_products_router = APIRouter(
-    prefix=FavoriteProductsAPIRoutes.prefix,
-    tags=FavoriteProductsAPIRoutes.tags,
+    prefix=APIConfig.FAVORITE_PRODUCTS_ROUTE_PREFIX,
+    tags=favorite_products_routes_mapper.tags,
     dependencies=[Depends(JWTBearerAuth())]
 )
 
@@ -42,7 +32,7 @@ class ServiceFavoriteProductsAPIRouter:
     session: AsyncSession = Depends(get_async_session)
 
     @favorite_products_router.get(
-        FavoriteProductsAPIRoutes.get_favorite_products_list,
+        favorite_products_routes_mapper.get_all,
         response_model=ServiceProviderResponse
     )
     async def get_favorite_products_list(
@@ -63,7 +53,7 @@ class ServiceFavoriteProductsAPIRouter:
             return await ServiceProviderResponse.from_exception(exception=ex)
 
     @favorite_products_router.get(
-        FavoriteProductsAPIRoutes.get_favorite_product_from_list,
+        favorite_products_routes_mapper.get_by,
         response_model=ServiceProviderResponse
     )
     async def get_favorite_product_from_list(
@@ -83,7 +73,7 @@ class ServiceFavoriteProductsAPIRouter:
             return await ServiceProviderResponse.from_exception(exception=ex)
 
     @favorite_products_router.post(
-        FavoriteProductsAPIRoutes.include_favorite_product_to_list,
+        favorite_products_routes_mapper.create,
         response_model=ServiceProviderResponse
     )
     async def include_favorite_product_to_list(
@@ -107,7 +97,7 @@ class ServiceFavoriteProductsAPIRouter:
             return await ServiceProviderResponse.from_exception(exception=ex)
 
     @favorite_products_router.delete(
-        FavoriteProductsAPIRoutes.remove_favorite_product_from_list,
+        favorite_products_routes_mapper.delete['from-list'],
         response_model=ServiceProviderResponse
     )
     async def remove_favorite_product_from_list(
@@ -129,7 +119,7 @@ class ServiceFavoriteProductsAPIRouter:
             return await ServiceProviderResponse.from_exception(exception=ex)
 
     @favorite_products_router.delete(
-        FavoriteProductsAPIRoutes.delete_favorite_products_list,
+        favorite_products_routes_mapper.delete['list'],
         response_model=ServiceProviderResponse
     )
     async def delete_favorite_products_list(

@@ -16,10 +16,6 @@ class FavoriteProductsRegister(FavoriteProductsBase):
     client_id: int
 
 
-class FavoriteProductsRemove(FavoriteProductsBase):
-    client_id: int
-
-
 class FavoriteProductsEntity(FavoriteProductsBase):
     id: Optional[int] = Field(default=None, primary_key=True, index=True)
 
