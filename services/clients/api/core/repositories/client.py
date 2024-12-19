@@ -4,7 +4,6 @@ from sqlmodel import select
 from sqlalchemy.exc import NoResultFound, IntegrityError
 
 from api.core.entities.client import ClientEntity
-from api.core.database import AsyncSession
 from api.core.error_handlers import (
     RegisterNotFound,
     RegisterAlreadyExists,
@@ -13,13 +12,11 @@ from api.core.error_handlers import (
 )
 from api.core.models.client import ClientModel
 from api.core.logger import logger
+from .repository import Repository
 
 
-class ClientRepository:
-
-    def __init__(self, session: AsyncSession):
-        self._session: AsyncSession = session
-        self._model = ClientModel
+class ClientRepository(Repository):
+    _model = ClientModel
 
     async def get_all(self) -> List[ClientEntity]:
         try:

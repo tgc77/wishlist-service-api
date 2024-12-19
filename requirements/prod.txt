@@ -13,3 +13,4 @@ typing-inspect
 pytest
 pytest-asyncio
 pika==1.3.2
+celery

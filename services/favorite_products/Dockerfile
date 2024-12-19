@@ -8,8 +8,9 @@ ENV PYTHONUNBUFFERED=1
 
 WORKDIR /api
 COPY /services/favorite_products/ .
+COPY requirements/prod.txt .
 
-RUN python -m pip install -r requirements.txt
+RUN python -m pip install -r prod.txt
 
 RUN apt-get -y update && apt-get -y install curl
 

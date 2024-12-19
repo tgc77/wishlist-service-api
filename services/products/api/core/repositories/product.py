@@ -13,13 +13,11 @@ from api.core.error_handlers import (
 from api.core.models.product import ProductModel
 from api.core.logger import logger
 from api.core.utils import get_json_pydantic_model
+from .repository import Repository
 
 
-class ProductRepository:
-
-    def __init__(self, session: AsyncSession):
-        self._session: AsyncSession = session
-        self._model = ProductModel
+class ProductRepository(Repository):
+    _model = ProductModel
 
     async def get_all_by_filters(self, limit: int, offset: int) -> List[Dict]:
         try:

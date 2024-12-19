@@ -5,7 +5,6 @@ import uuid as uuid_pkg
 from sqlalchemy.exc import NoResultFound, IntegrityError
 from sqlalchemy import and_
 
-from api.core.database import AsyncSession
 from api.core.error_handlers import (
     RegisterNotFound,
     DatabaseIntegrityError,
@@ -18,17 +17,14 @@ from api.core.models.favorite_products import (
 )
 from api.core.models.product import ProductModel
 from api.core.logger import logger
-
 from api.core.utils import get_json_pydantic_model
+from .repository import Repository
 
 
-class FavoriteProductsRepository:
-
-    def __init__(self, session: AsyncSession):
-        self._session: AsyncSession = session
-        self._favorite_products_model = FavoriteProductsModel
-        self._favorite_products_list_model = FavoriteProductsListModel
-        self._product_model = ProductModel
+class FavoriteProductsRepository(Repository):
+    _favorite_products_model = FavoriteProductsModel
+    _favorite_products_list_model = FavoriteProductsListModel
+    _product_model = ProductModel
 
     async def get_client_favorite_products_list(self, client_id: int) -> FavoriteProductsListModel:
         try:

@@ -36,12 +36,9 @@ class ServiceGatewayAPIAccessCredentialsRouter:
         gateway_router.get_all,
         response_model=ServiceProviderResponse
     )
-    async def get_credentials(
-        self,
-        session: AsyncSession = Depends(get_async_session)
-    ):
+    async def get_credentials(self):
         try:
-            access_credentials = await AccessCredentialsRepository(session).get_all()
+            access_credentials = await AccessCredentialsRepository().get_all()
             logger.info("Ouieh! Got Access credentials successfully")
             return await ServiceProviderResponse.from_response(
                 response=access_credentials
@@ -58,12 +55,11 @@ class ServiceGatewayAPIAccessCredentialsRouter:
     )
     async def register_credentials(
         self,
-        credentials_data: AccessCredentialsRegister,
-        session: AsyncSession = Depends(get_async_session)
+        credentials_data: AccessCredentialsRegister
     ):
         try:
             credentials_register = AccessCredentialsRegister.model_validate(credentials_data)
-            await UserAuthenticator(session).register_credentials(access_credentials=credentials_register)
+            await UserAuthenticator().register_credentials(access_credentials=credentials_register)
             logger.info("Ouieh! Access credentials created successfully")
             return await ServiceProviderResponse.from_response(
                 response={
@@ -84,12 +80,11 @@ class ServiceGatewayAPIAccessCredentialsRouter:
     async def update_access_credentials(
         self,
         client_id: int,
-        access_credentials: AccessCredentialsRegister,
-        session: AsyncSession = Depends(get_async_session)
+        access_credentials: AccessCredentialsRegister
     ):
         try:
             access_credentials_update = AccessCredentialsRegister.model_validate(access_credentials)
-            await AccessCredentialsRepository(session).update(client_id, access_credentials_update)
+            await AccessCredentialsRepository().update(client_id, access_credentials_update)
             logger.info("Ouieh! Access credentials updated successfully")
             return await ServiceProviderResponse.from_response(
                 response={
@@ -108,11 +103,10 @@ class ServiceGatewayAPIAccessCredentialsRouter:
     )
     async def delete_access_credentials(
         self,
-        client_id: int,
-        session: AsyncSession = Depends(get_async_session)
+        client_id: int
     ):
         try:
-            await AccessCredentialsRepository(session).delete(client_id=client_id)
+            await AccessCredentialsRepository().delete(client_id=client_id)
             logger.info("Ouieh! Access credentials deleted successfully")
             return await ServiceProviderResponse.from_response(
                 response={'message': "Access credentials deleted successfully!"}

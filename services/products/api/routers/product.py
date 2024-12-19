@@ -12,7 +12,6 @@ from api.core.entities.product import (
     ProductReview
 )
 from api.core.security.user_authenticator import JWTBearerAuth
-from api.core.database import AsyncSession, get_async_session
 from api.core.logger import logger
 from api.core.repositories.product import ProductRepository
 from api.core.response import ServiceProviderResponse
@@ -30,7 +29,6 @@ products_router = APIRouter(
 
 @cbv(products_router)
 class ServiceProductsAPIRouter:
-    session: AsyncSession = Depends(get_async_session)
 
     @products_router.get(
         products_routes_mapper.get_all,
@@ -42,7 +40,7 @@ class ServiceProductsAPIRouter:
         offset: Optional[int] = 0
     ):
         try:
-            products = await ProductRepository(self.session).get_all_by_filters(
+            products = await ProductRepository().get_all_by_filters(
                 limit=limit,
                 offset=offset
             )
@@ -72,7 +70,7 @@ class ServiceProductsAPIRouter:
         id: uuid_pkg.UUID
     ):
         try:
-            product = await ProductRepository(self.session).get_by_id(id=id)
+            product = await ProductRepository().get_by_id(id=id)
             link_product_review = "/".join([
                 APIConfig.API_GATEWAY_SERVICE_URL,
                 'products',
@@ -119,7 +117,7 @@ class ServiceProductsAPIRouter:
         product_register: ProductRegister
     ):
         try:
-            new_product = await ProductRepository(self.session).register(product_register)
+            new_product = await ProductRepository().register(product_register)
             logger.info("Ouieh! Product register successfully!")
             return await ServiceProviderResponse.from_response(
                 response={
@@ -142,7 +140,7 @@ class ServiceProductsAPIRouter:
         product_update: ProductUpdate
     ):
         try:
-            product = await ProductRepository(self.session).update(id=id, product_update=product_update)
+            product = await ProductRepository().update(id=id, product_update=product_update)
             logger.info("Ouieh! Product updated successfully!")
             return await ServiceProviderResponse.from_response(
                 response={
@@ -163,7 +161,7 @@ class ServiceProductsAPIRouter:
         id: uuid_pkg.UUID
     ):
         try:
-            await ProductRepository(self.session).delete(id=id)
+            await ProductRepository().delete(id=id)
             logger.info("Ouieh! Product deleted successfully!")
             return await ServiceProviderResponse.from_response(
                 response={'message': "Product deleted successfully!"}

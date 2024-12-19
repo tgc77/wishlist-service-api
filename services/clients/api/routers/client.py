@@ -7,7 +7,6 @@ from api.core.entities.client import (
     ClientsView
 )
 from api.core.security.user_authenticator import JWTBearerAuth
-from api.core.database import AsyncSession, get_async_session
 from api.core.logger import logger
 from api.core.repositories.client import ClientRepository
 from api.core.response import ServiceProviderResponse
@@ -25,7 +24,6 @@ clients_router = APIRouter(
 
 @cbv(clients_router)
 class ServiceClientsAPIRouter:
-    session: AsyncSession = Depends(get_async_session)
 
     @clients_router.get(
         clients_routes_mapper.get_all,
@@ -34,7 +32,7 @@ class ServiceClientsAPIRouter:
     )
     async def get_clients(self):
         try:
-            clients = await ClientRepository(self.session).get_all()
+            clients = await ClientRepository().get_all()
             response = ClientsView(count=len(clients), clients=clients)
             logger.info("Ouieh! Got Clients data successfully!")
             return await ServiceProviderResponse.from_response(response=response.model_dump())
@@ -49,7 +47,7 @@ class ServiceClientsAPIRouter:
     )
     async def get_client_by_id(self, id: int):
         try:
-            response = await ClientRepository(self.session).get_by_id(id=id)
+            response = await ClientRepository().get_by_id(id=id)
             logger.info("Ouieh! Got Client data successfully!")
             return await ServiceProviderResponse.from_response(response=response.model_dump())
         except Exception as ex:
@@ -62,7 +60,7 @@ class ServiceClientsAPIRouter:
     )
     async def register_client(self, client_register: ClientRegister):
         try:
-            response = await ClientRepository(self.session).register(client_register)
+            response = await ClientRepository().register(client_register)
             logger.info("Ouieh! Client registerd successfully!")
             return await ServiceProviderResponse.from_response(
                 response={'message': "Client registerd successfully!",
@@ -79,7 +77,7 @@ class ServiceClientsAPIRouter:
     )
     async def update_client(self, id: int, client_update: ClientUpdate):
         try:
-            response = await ClientRepository(self.session).update(id=id, client_update=client_update)
+            response = await ClientRepository().update(id=id, client_update=client_update)
             logger.info("Ouieh! Client updated successfully!")
             return await ServiceProviderResponse.from_response(
                 response={'message': "Client updated successfully!",
@@ -96,7 +94,7 @@ class ServiceClientsAPIRouter:
     )
     async def delete_client(self, id: int):
         try:
-            await ClientRepository(self.session).delete(id=id)
+            await ClientRepository().delete(id=id)
             logger.info("Ouieh! Client deleted successfully!")
             return await ServiceProviderResponse.from_response(
                 response={'message': "Client deleted successfully!"}

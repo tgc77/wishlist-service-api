@@ -4,7 +4,6 @@ from sqlmodel import select
 from sqlalchemy.exc import NoResultFound, IntegrityError
 
 from api.core.entities.access_credentials import AccessCredentialsEntity
-from api.core.database import AsyncSession
 from api.core.error_handlers import (
     RegisterNotFound,
     RegisterAlreadyExists,
@@ -14,13 +13,11 @@ from api.core.error_handlers import (
 from api.core.models.access_credentials import AccessCredentialsModel
 from api.core.security.password_crypt import password_crypt_context
 from api.core.logger import logger
+from .repository import Repository
 
 
-class AccessCredentialsRepository:
-
-    def __init__(self, session: AsyncSession):
-        self._session: AsyncSession = session
-        self._model = AccessCredentialsModel
+class AccessCredentialsRepository(Repository):
+    _model = AccessCredentialsModel
 
     async def get_all(self) -> List[AccessCredentialsEntity]:
         try:
