@@ -53,10 +53,6 @@ app = FastAPI(
 class InjectCurrentUserMiddleware(BaseHTTPMiddleware):
 
     async def dispatch(self, request: Request, call_next):
-
-        # TODO: remove it,just for testing
-        # app.state.current_user = 'tiago'
-
         response = await call_next(request)
 
         if not hasattr(app.state, 'current_user'):
