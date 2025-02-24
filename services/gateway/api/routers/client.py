@@ -11,8 +11,8 @@ from api.core.entities.client import (
     ClientRegister,
     ClientUpdate,
 )
+from api.core.controllers.clients import ClientsController
 from .router_dispatcher import (
-    RequestRouterDispatcher,
     ServiceApiRouter,
     GatewayApiRouter
 )
@@ -26,6 +26,7 @@ service_router = ServiceApiRouter(
 )
 
 clients_router = service_router.get_app_api_router()
+clients_controller = ClientsController()
 
 
 @cbv(clients_router)
@@ -42,9 +43,8 @@ class APIClientsRouter:
     ):
         get_all_router = service_router.get_route_parameters_mapper(gateway_router.get_all)
         get_all_router.auth_header = auth_header
-        return await RequestRouterDispatcher(request).get(
-            get_all_router
-        )
+        get_all_router.request = request
+        return await clients_controller.get_clients(get_all_router)
 
     @clients_router.get(
         gateway_router.get_by,
@@ -59,9 +59,8 @@ class APIClientsRouter:
         get_by_router = service_router.get_route_parameters_mapper(gateway_router.get_by)
         get_by_router.auth_header = auth_header
         get_by_router.params = dict(id=id)
-        return await RequestRouterDispatcher(request).get_by(
-            get_by_router
-        )
+        get_by_router.request = request
+        return await clients_controller.get_client_by_id(get_by_router)
 
     @clients_router.post(
         gateway_router.create,
@@ -76,9 +75,8 @@ class APIClientsRouter:
         create_router = service_router.get_route_parameters_mapper(gateway_router.create)
         create_router.auth_header = auth_header
         create_router.dispatched_data = create_client
-        return await RequestRouterDispatcher(request).create(
-            create_router
-        )
+        create_router.request = request
+        return await clients_controller.register_client(create_router)
 
     @clients_router.patch(
         gateway_router.update,
@@ -95,9 +93,8 @@ class APIClientsRouter:
         update_router.auth_header = auth_header
         update_router.dispatched_data = update_client
         update_router.params = dict(id=id)
-        return await RequestRouterDispatcher(request).update(
-            update_router
-        )
+        update_router.request = request
+        return await clients_controller.update_client(update_router)
 
     @clients_router.delete(
         gateway_router.delete,
@@ -112,6 +109,5 @@ class APIClientsRouter:
         delete_router = service_router.get_route_parameters_mapper(gateway_router.delete)
         delete_router.auth_header = auth_header
         delete_router.params = dict(id=id)
-        return await RequestRouterDispatcher(request).delete(
-            delete_router
-        )
+        delete_router.request = request
+        return await clients_controller.delete_client(delete_router)

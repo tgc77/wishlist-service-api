@@ -20,7 +20,7 @@ from api.core.utils import ipdb_set_trace
 APIConfigParameter = TypeVar('APIConfigParameter', bound=str)
 
 
-class ServiceRouteParameters:
+class ServiceRouterParameters:
 
     def __init__(
         self,
@@ -29,6 +29,7 @@ class ServiceRouteParameters:
         auth_header: Optional[Dict] = None,
         dispatched_data: Optional[BaseModel] = None,
         quey_params: Optional[BaseModel] = None,
+        request: Optional[Request] = None,
         **params
     ):
         self._service_router = service_router
@@ -36,6 +37,7 @@ class ServiceRouteParameters:
         self.auth_header = auth_header
         self.dispatched_data = dispatched_data
         self.quey_params = quey_params
+        self.request = request
         self.params = params
 
     def get_service_route_path(self) -> str:
@@ -54,16 +56,16 @@ class APIRouteMapper(Mapping):
         self._routes = {}
         self._gateway_route = None
 
-    def __call__(self) -> ServiceRouteParameters:
+    def __call__(self) -> ServiceRouterParameters:
         return self._routes[self._gateway_route]
 
     def get_params(self) -> Dict[str, str]:
         return self.__call__().params
 
-    def __getitem__(self, gateway_route: str) -> ServiceRouteParameters:
+    def __getitem__(self, gateway_route: str) -> ServiceRouterParameters:
         return self._routes[gateway_route]
 
-    def __setitem__(self, gateway_route: str, service_route: ServiceRouteParameters):
+    def __setitem__(self, gateway_route: str, service_route: ServiceRouterParameters):
         self._gateway_route = gateway_route
         self._routes[gateway_route] = service_route
 
@@ -151,17 +153,17 @@ class ServiceApiRouter:
 
             if isinstance(gateway_route, dict):
                 for _action, _route in gateway_route.items():
-                    self._routes[_action] = ServiceRouteParameters(
+                    self._routes[_action] = ServiceRouterParameters(
                         service_router=self,
                         route_path=_route
                     )
             else:
-                self._routes[route] = ServiceRouteParameters(
+                self._routes[route] = ServiceRouterParameters(
                     service_router=self,
                     route_path=route
                 )
 
-    def get_route_parameters_mapper(self, action: str) -> ServiceRouteParameters:
+    def get_route_parameters_mapper(self, action: str) -> ServiceRouterParameters:
         return self._routes[action]
 
     def get_service_route_path(self, route_path: str, **params) -> str:
@@ -192,7 +194,7 @@ class RequestRouterDispatcher:
 
     async def get(
         self,
-        parameters: ServiceRouteParameters
+        parameters: ServiceRouterParameters
     ) -> APIGatwayProviderResponse:
         try:
             route_path = parameters.get_service_route_path()
@@ -215,7 +217,7 @@ class RequestRouterDispatcher:
 
     async def get_by(
         self,
-        parameters: ServiceRouteParameters
+        parameters: ServiceRouterParameters
     ) -> APIGatwayProviderResponse:
         try:
             route_path = parameters.get_service_route_path()
@@ -240,7 +242,7 @@ class RequestRouterDispatcher:
 
     async def create(
         self,
-        parameters: ServiceRouteParameters
+        parameters: ServiceRouterParameters
     ) -> APIGatwayProviderResponse:
         try:
             route_path = parameters.get_service_route_path()
@@ -266,7 +268,7 @@ class RequestRouterDispatcher:
 
     async def update(
         self,
-        parameters: ServiceRouteParameters
+        parameters: ServiceRouterParameters
     ):
         try:
             route_path = parameters.get_service_route_path()
@@ -292,7 +294,7 @@ class RequestRouterDispatcher:
 
     async def delete(
         self,
-        parameters: ServiceRouteParameters
+        parameters: ServiceRouterParameters
     ):
         try:
             route_path = parameters.get_service_route_path()
