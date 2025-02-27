@@ -1,4 +1,4 @@
-from fastapi import Request
+from fastapi import Depends, Request
 from fastapi_utils.cbv import cbv
 
 from api.core.settings import APIConfig
@@ -11,7 +11,7 @@ from api.core.entities.client import (
     ClientRegister,
     ClientUpdate,
 )
-from api.core.controllers.clients import ClientsController
+from services.gateway.api.core.controllers.client import ClientController
 from .router_dispatcher import (
     ServiceApiRouter,
     GatewayApiRouter
@@ -26,11 +26,13 @@ service_router = ServiceApiRouter(
 )
 
 clients_router = service_router.get_app_api_router()
-clients_controller = ClientsController()
 
 
 @cbv(clients_router)
 class APIClientsRouter:
+
+    def __init__(self, client_controller: ClientController = Depends(ClientController)):
+        self.client_controller = client_controller
 
     @clients_router.get(
         gateway_router.get_all,
@@ -44,7 +46,7 @@ class APIClientsRouter:
         get_all_router = service_router.get_route_parameters_mapper(gateway_router.get_all)
         get_all_router.auth_header = auth_header
         get_all_router.request = request
-        return await clients_controller.get_clients(get_all_router)
+        return await self.client_controller.get_clients(get_all_router)
 
     @clients_router.get(
         gateway_router.get_by,
@@ -60,7 +62,7 @@ class APIClientsRouter:
         get_by_router.auth_header = auth_header
         get_by_router.params = dict(id=id)
         get_by_router.request = request
-        return await clients_controller.get_client_by_id(get_by_router)
+        return await self.client_controller.get_client_by_id(get_by_router)
 
     @clients_router.post(
         gateway_router.create,
@@ -76,7 +78,7 @@ class APIClientsRouter:
         create_router.auth_header = auth_header
         create_router.dispatched_data = create_client
         create_router.request = request
-        return await clients_controller.register_client(create_router)
+        return await self.client_controller.register_client(create_router)
 
     @clients_router.patch(
         gateway_router.update,
@@ -94,7 +96,7 @@ class APIClientsRouter:
         update_router.dispatched_data = update_client
         update_router.params = dict(id=id)
         update_router.request = request
-        return await clients_controller.update_client(update_router)
+        return await self.client_controller.update_client(update_router)
 
     @clients_router.delete(
         gateway_router.delete,
@@ -110,4 +112,4 @@ class APIClientsRouter:
         delete_router.auth_header = auth_header
         delete_router.params = dict(id=id)
         delete_router.request = request
-        return await clients_controller.delete_client(delete_router)
+        return await self.client_controller.delete_client(delete_router)

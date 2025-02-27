@@ -7,9 +7,9 @@ from api.routers.router_dispatcher import (
 from api.core.response import APIGatwayProviderResponse
 
 
-class ClientsController:
+class FavoriteProductController:
 
-    async def get_clients(
+    async def get_favorite_products_list(
         self,
         service_router_parameters: ServiceRouterParameters
     ) -> APIGatwayProviderResponse:
@@ -17,7 +17,7 @@ class ClientsController:
             service_router_parameters
         )
 
-    async def get_client_by_id(
+    async def get_favorite_product_from_list(
         self,
         service_router_parameters: ServiceRouterParameters
     ) -> APIGatwayProviderResponse:
@@ -25,7 +25,7 @@ class ClientsController:
             service_router_parameters
         )
 
-    async def register_client(
+    async def include_favorite_product_to_list(
         self,
         service_router_parameters: ServiceRouterParameters
     ) -> APIGatwayProviderResponse:
@@ -33,15 +33,15 @@ class ClientsController:
             service_router_parameters
         )
 
-    async def update_client(
+    async def remove_favorite_product_from_list(
         self,
         service_router_parameters: ServiceRouterParameters
     ) -> APIGatwayProviderResponse:
-        return await RequestRouterDispatcher(service_router_parameters.request).update(
+        return await RequestRouterDispatcher(service_router_parameters.request).delete(
             service_router_parameters
         )
 
-    async def delete_client(
+    async def delete_favorite_products_list(
         self,
         service_router_parameters: ServiceRouterParameters
     ) -> APIGatwayProviderResponse:

@@ -29,6 +29,9 @@ favorite_products_router = APIRouter(
 @cbv(favorite_products_router)
 class ServiceFavoriteProductsAPIRouter:
 
+    def __init__(self, favorite_products_repository: FavoriteProductsRepository = Depends(FavoriteProductsRepository)):
+        self.favorite_products_repository = favorite_products_repository
+
     @favorite_products_router.get(
         favorite_products_routes_mapper.get_all,
         response_model=ServiceProviderResponse
@@ -38,7 +41,7 @@ class ServiceFavoriteProductsAPIRouter:
         client_id: int
     ):
         try:
-            products = await FavoriteProductsRepository().get_favorite_products_list(client_id)
+            products = await self.favorite_products_repository.get_favorite_products_list(client_id)
             response = FavoriteProductsListView(
                 count=len(products),
                 client_id=client_id,
@@ -60,7 +63,7 @@ class ServiceFavoriteProductsAPIRouter:
         product_id: uuid_pkg.UUID
     ):
         try:
-            response = await FavoriteProductsRepository().get_favorite_product_from_list(
+            response = await self.favorite_products_repository.get_favorite_product_from_list(
                 client_id=client_id,
                 product_id=product_id
             )
@@ -79,7 +82,7 @@ class ServiceFavoriteProductsAPIRouter:
         product_register: FavoriteProductsRegister
     ):
         try:
-            favorite_product = await FavoriteProductsRepository().include_to_list(product_register)
+            favorite_product = await self.favorite_products_repository.include_to_list(product_register)
             response = FavoriteProductView(
                 message="Product included into favorite products list successfully",
                 client_id=product_register.client_id,
@@ -104,7 +107,7 @@ class ServiceFavoriteProductsAPIRouter:
         product_id: uuid_pkg.UUID
     ):
         try:
-            await FavoriteProductsRepository().remove_favorite_product_from_list(
+            await self.favorite_products_repository.remove_favorite_product_from_list(
                 client_id=client_id,
                 product_id=product_id
             )
@@ -125,7 +128,7 @@ class ServiceFavoriteProductsAPIRouter:
         client_id: int
     ):
         try:
-            await FavoriteProductsRepository().delete_favorite_products_list(client_id=client_id)
+            await self.favorite_products_repository.delete_favorite_products_list(client_id=client_id)
             logger.info("Ouieh! Product deleted successfully!")
             return await ServiceProviderResponse.from_response(
                 response={'message': "Favorite products list deleted successfully!"}

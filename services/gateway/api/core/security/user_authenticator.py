@@ -1,4 +1,3 @@
-from dataclasses import dataclass
 from typing import Annotated, Dict
 from datetime import datetime, timedelta, timezone
 
@@ -8,7 +7,6 @@ from fastapi.security import SecurityScopes
 from jwt.exceptions import InvalidTokenError
 
 from api.core.entities.token import TokenData
-from api.core.database import AsyncSession, get_async_session
 from api.core.entities.access_credentials import AccessCredentialsEntity
 from api.core.repositories.access_credentials import AccessCredentialsRepository
 from api.core.repositories.client import ClientRepository
@@ -49,9 +47,15 @@ class CredentialsException:
         )
 
 
-@dataclass
 class UserAuthenticator:
-    session: AsyncSession = None
+
+    def __init__(
+        self,
+        client_repository: ClientRepository = Depends(ClientRepository),
+        access_credential_repository: AccessCredentialsRepository = Depends(AccessCredentialsRepository)
+    ):
+        self.client_repository = client_repository
+        self.access_credential_repository = access_credential_repository
 
     def verify_password(self, plain_password: str, hashed_password: str):
         return password_crypt_context.verify(plain_password, hashed_password)
@@ -63,10 +67,10 @@ class UserAuthenticator:
         try:
             hashed_password = self.generate_hashed_password(access_credentials.password)
             access_credentials.password = hashed_password
-            client_data = await ClientRepository(self.session).get_by_email(access_credentials.email)
+            client_data = await self.client_repository.get_by_email(access_credentials.email)
             new_access_credentials = AccessCredentialsEntity(**access_credentials.model_dump())
             new_access_credentials.client_id = client_data.id
-            await AccessCredentialsRepository(self.session).register(
+            await self.access_credential_repository.register(
                 access_credentials_create=AccessCredentialsEntity.model_validate(new_access_credentials)
             )
             logger.info("Ouieh! User credentials registered successfully")
@@ -76,7 +80,7 @@ class UserAuthenticator:
 
     async def validate_user_access_credentials(self, username: str) -> AccessCredentialsEntity:
         try:
-            access_credentials = await AccessCredentialsRepository(session=self.session).get_by_username(username)
+            access_credentials = await self.access_credential_repository.get_by_username(username)
             return access_credentials
         except Exception as ex:
             logger.error(f"Oops!{ex}")
@@ -110,7 +114,7 @@ class UserAuthenticator:
 async def validate_access_credentials(
     security_scopes: SecurityScopes,
     token: Annotated[str, Depends(oauth2_scheme)],
-    session: AsyncSession = Depends(get_async_session)
+    user_authenticator: UserAuthenticator = Depends(UserAuthenticator)
 ) -> AccessCredentialsEntity:
     credentials_exception = CredentialsException()
     if security_scopes.scopes:
@@ -128,7 +132,7 @@ async def validate_access_credentials(
     except InvalidTokenError:
         credentials_exception.raise_it()
 
-    user = await UserAuthenticator(session).validate_user_access_credentials(username=token_data.username)
+    user = await user_authenticator.validate_user_access_credentials(username=token_data.username)
     if user is None:
         credentials_exception.raise_it()
 

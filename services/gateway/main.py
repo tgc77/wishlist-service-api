@@ -11,7 +11,6 @@ from api.routers.product import products_router
 from api.routers.favorite_products import favorite_products_router
 from api.routers.access_credentials import access_credentials_router
 from api.routers.auth import auth_router
-# from api.core.initialize_models import create_database_models
 from api.core.error_handlers import (
     request_validation_error_handler,
     http_error_handler,
@@ -24,7 +23,6 @@ from api.routers.router_dispatcher import APIServiceRouterManager
 @asynccontextmanager
 async def api_initializer(app: FastAPI):
     app.api_request = httpx.AsyncClient()
-    # await create_database_models()
     yield
     await app.api_request.aclose()
 
@@ -53,6 +51,9 @@ app = FastAPI(
 class InjectCurrentUserMiddleware(BaseHTTPMiddleware):
 
     async def dispatch(self, request: Request, call_next):
+        # TODO remover aqui!!!
+        app.state.current_user = 'tiago'
+
         response = await call_next(request)
 
         if not hasattr(app.state, 'current_user'):

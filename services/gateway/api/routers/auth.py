@@ -7,7 +7,6 @@ from fastapi.security import OAuth2PasswordRequestForm
 from api.core.settings import APIConfig
 from api.core.entities.token import Token
 from api.core.security.user_authenticator import UserAuthenticator
-from api.core.database import AsyncSession, get_async_session
 
 auth_router = APIRouter(
     tags=["Authentication"]
@@ -18,9 +17,8 @@ auth_router = APIRouter(
 async def login_for_access_token(
     request: Request,
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
-    session: AsyncSession = Depends(get_async_session)
+    user_authenticator: UserAuthenticator = Depends(UserAuthenticator)
 ) -> Token:
-    user_authenticator = UserAuthenticator(session)
     user = await user_authenticator.authenticate_user(
         form_data.username, form_data.password
     )

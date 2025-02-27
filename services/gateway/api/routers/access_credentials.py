@@ -1,16 +1,13 @@
-from fastapi import Depends, status
+from fastapi import Depends
 from fastapi_utils.cbv import cbv
 
 from api.core.entities.access_credentials import AccessCredentialsRegister
-from api.core.database import AsyncSession, get_async_session
-from api.core.logger import logger
-from api.core.repositories.access_credentials import AccessCredentialsRepository
 from api.core.response import ServiceProviderResponse
 from api.core.security.user_authenticator import (
-    UserAuthenticator,
     validate_access_credetials_as_admin
 )
 from api.core.settings import APIConfig
+from api.core.controllers.access_credentials import AccessCredentialsController
 from .router_dispatcher import (
     ServiceApiRouter,
     GatewayApiRouter
@@ -32,22 +29,15 @@ access_credentials_router.dependencies = [
 @cbv(access_credentials_router)
 class ServiceGatewayAPIAccessCredentialsRouter:
 
+    def __init__(self, access_credential_controller: AccessCredentialsController = Depends(AccessCredentialsController)):
+        self.access_credential_controller = access_credential_controller
+
     @access_credentials_router.get(
         gateway_router.get_all,
         response_model=ServiceProviderResponse
     )
     async def get_credentials(self):
-        try:
-            access_credentials = await AccessCredentialsRepository().get_all()
-            logger.info("Ouieh! Got Access credentials successfully")
-            return await ServiceProviderResponse.from_response(
-                response=access_credentials
-            )
-        except Exception as ex:
-            logger.error(f"Oops! Got some trouble here: {ex}")
-            return await ServiceProviderResponse.from_exception(
-                exception=ex
-            )
+        return await self.access_credential_controller.get_credentials()
 
     @access_credentials_router.post(
         gateway_router.create,
@@ -57,21 +47,7 @@ class ServiceGatewayAPIAccessCredentialsRouter:
         self,
         credentials_data: AccessCredentialsRegister
     ):
-        try:
-            credentials_register = AccessCredentialsRegister.model_validate(credentials_data)
-            await UserAuthenticator().register_credentials(access_credentials=credentials_register)
-            logger.info("Ouieh! Access credentials created successfully")
-            return await ServiceProviderResponse.from_response(
-                response={
-                    'message': "Access credentials created successfully"
-                },
-                status_code=status.HTTP_201_CREATED
-            )
-        except Exception as ex:
-            logger.error(f"Oops! Got some trouble here: {ex}")
-            return await ServiceProviderResponse.from_exception(
-                exception=ex
-            )
+        return await self.access_credential_controller.register_credentials(credentials_data=credentials_data)
 
     @access_credentials_router.patch(
         gateway_router.update,
@@ -82,20 +58,10 @@ class ServiceGatewayAPIAccessCredentialsRouter:
         client_id: int,
         access_credentials: AccessCredentialsRegister
     ):
-        try:
-            access_credentials_update = AccessCredentialsRegister.model_validate(access_credentials)
-            await AccessCredentialsRepository().update(client_id, access_credentials_update)
-            logger.info("Ouieh! Access credentials updated successfully")
-            return await ServiceProviderResponse.from_response(
-                response={
-                    'message': "Access credentials updated successfully"
-                }
-            )
-        except Exception as ex:
-            logger.error(f"Oops! Got some trouble here: {ex}")
-            return await ServiceProviderResponse.from_exception(
-                exception=ex
-            )
+        return await self.access_credential_controller.update_access_credentials(
+            client_id=client_id,
+            access_credentials=access_credentials
+        )
 
     @access_credentials_router.delete(
         gateway_router.delete,
@@ -105,14 +71,4 @@ class ServiceGatewayAPIAccessCredentialsRouter:
         self,
         client_id: int
     ):
-        try:
-            await AccessCredentialsRepository().delete(client_id=client_id)
-            logger.info("Ouieh! Access credentials deleted successfully")
-            return await ServiceProviderResponse.from_response(
-                response={'message': "Access credentials deleted successfully!"}
-            )
-        except Exception as ex:
-            logger.error(f"Oops! Got some trouble here: {ex}")
-            return await ServiceProviderResponse.from_exception(
-                exception=ex
-            )
+        return await self.access_credential_controller.delete_access_credentials(client_id=client_id)

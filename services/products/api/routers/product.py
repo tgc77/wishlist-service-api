@@ -30,6 +30,9 @@ products_router = APIRouter(
 @cbv(products_router)
 class ServiceProductsAPIRouter:
 
+    def __init__(self, product_repository: ProductRepository = Depends(ProductRepository)):
+        self.product_repository = product_repository
+
     @products_router.get(
         products_routes_mapper.get_all,
         response_model=ServiceProviderResponse
@@ -40,7 +43,7 @@ class ServiceProductsAPIRouter:
         offset: Optional[int] = 0
     ):
         try:
-            products = await ProductRepository().get_all_by_filters(
+            products = await self.product_repository.get_all_by_filters(
                 limit=limit,
                 offset=offset
             )
@@ -70,7 +73,7 @@ class ServiceProductsAPIRouter:
         id: uuid_pkg.UUID
     ):
         try:
-            product = await ProductRepository().get_by_id(id=id)
+            product = await self.product_repository.get_by_id(id=id)
             link_product_review = "/".join([
                 APIConfig.API_GATEWAY_SERVICE_URL,
                 'products',
@@ -117,7 +120,7 @@ class ServiceProductsAPIRouter:
         product_register: ProductRegister
     ):
         try:
-            new_product = await ProductRepository().register(product_register)
+            new_product = await self.product_repository.register(product_register)
             logger.info("Ouieh! Product register successfully!")
             return await ServiceProviderResponse.from_response(
                 response={
@@ -140,7 +143,7 @@ class ServiceProductsAPIRouter:
         product_update: ProductUpdate
     ):
         try:
-            product = await ProductRepository().update(id=id, product_update=product_update)
+            product = await self.product_repository.update(id=id, product_update=product_update)
             logger.info("Ouieh! Product updated successfully!")
             return await ServiceProviderResponse.from_response(
                 response={
@@ -161,7 +164,7 @@ class ServiceProductsAPIRouter:
         id: uuid_pkg.UUID
     ):
         try:
-            await ProductRepository().delete(id=id)
+            await self.product_repository.delete(id=id)
             logger.info("Ouieh! Product deleted successfully!")
             return await ServiceProviderResponse.from_response(
                 response={'message': "Product deleted successfully!"}

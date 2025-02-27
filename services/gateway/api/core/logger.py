@@ -1,17 +1,16 @@
 
-
-from pprint import pprint
-
-
-class Logger:
-    def info(self, message: str):
-        print(f"[INFO] {message}")
-
-    def error(self, message: str):
-        print(f"[ERROR] {message}")
-
-    def debug(self, message: str):
-        pprint(f"[DEBUG] {message}")
+import logging
 
 
-logger = Logger()
+class Logger(logging.Logger):
+
+    def __init__(self, name, level=0):
+        super().__init__(name, level)
+
+        handler = logging.StreamHandler()
+        formatter = logging.Formatter('%(levelname)s: %(message)s [%(filename)s: %(lineno)s]')
+        handler.setFormatter(formatter)
+        self.addHandler(handler)
+
+
+logger = Logger(name="app.logger", level=logging.INFO)

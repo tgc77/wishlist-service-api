@@ -1,6 +1,6 @@
 import uuid as uuid_pkg
 from typing import Optional
-from fastapi import Query, Request
+from fastapi import Depends, Query, Request
 from fastapi_utils.cbv import cbv
 
 from api.core.settings import APIConfig
@@ -14,8 +14,8 @@ from api.core.security.user_authenticator import (
     AdminAccessAuthorizationHeader,
     ClientAccessAuthorizationHeader
 )
+from api.core.controllers.product import ProductController
 from .router_dispatcher import (
-    RequestRouterDispatcher,
     ServiceApiRouter,
     GatewayApiRouter
 )
@@ -33,6 +33,9 @@ products_router = service_router.get_app_api_router()
 
 @cbv(products_router)
 class ServiceGatewayAPIProductsRouter:
+
+    def __init__(self, product_controller: ProductController = Depends(ProductController)):
+        self.product_controller = product_controller
 
     @products_router.get(
         gateway_router.get_all,
@@ -52,9 +55,8 @@ class ServiceGatewayAPIProductsRouter:
         get_all_router = service_router.get_route_parameters_mapper(gateway_router.get_all)
         get_all_router.auth_header = auth_header
         get_all_router.quey_params = query_params
-        return await RequestRouterDispatcher(request).get(
-            get_all_router
-        )
+        get_all_router.request = request
+        return await self.product_controller.get_products(get_all_router)
 
     @products_router.get(
         gateway_router.get_by,
@@ -69,9 +71,8 @@ class ServiceGatewayAPIProductsRouter:
         get_by_router = service_router.get_route_parameters_mapper(gateway_router.get_by)
         get_by_router.auth_header = auth_header
         get_by_router.params = dict(id=id)
-        return await RequestRouterDispatcher(request).get_by(
-            get_by_router
-        )
+        get_by_router.request = request
+        return await self.product_controller.get_product_by_id(get_by_router)
 
     @products_router.get(
         gateway_router.review,
@@ -86,9 +87,8 @@ class ServiceGatewayAPIProductsRouter:
         review_router = service_router.get_route_parameters_mapper(gateway_router.review)
         review_router.auth_header = auth_header
         review_router.params = dict(id=id)
-        return await RequestRouterDispatcher(request).get_by(
-            review_router
-        )
+        review_router.request = request
+        return await self.product_controller.get_product_review(review_router)
 
     @products_router.post(
         gateway_router.create,
@@ -103,9 +103,8 @@ class ServiceGatewayAPIProductsRouter:
         create_router = service_router.get_route_parameters_mapper(gateway_router.create)
         create_router.auth_header = auth_header
         create_router.dispatched_data = product_register
-        return await RequestRouterDispatcher(request).create(
-            create_router
-        )
+        create_router.request = request
+        return await self.product_controller.register_product(create_router)
 
     @products_router.patch(
         gateway_router.update,
@@ -122,9 +121,8 @@ class ServiceGatewayAPIProductsRouter:
         update_router.auth_header = auth_header
         update_router.dispatched_data = product_update
         update_router.params = dict(id=id)
-        return await RequestRouterDispatcher(request).update(
-            update_router
-        )
+        update_router.request = request
+        return await self.product_controller.update_product(update_router)
 
     @products_router.delete(
         gateway_router.delete,
@@ -139,6 +137,5 @@ class ServiceGatewayAPIProductsRouter:
         delete_router = service_router.get_route_parameters_mapper(gateway_router.delete)
         delete_router.auth_header = auth_header
         delete_router.params = dict(id=id)
-        return await RequestRouterDispatcher(request).delete(
-            delete_router
-        )
+        delete_router.request = request
+        return await self.product_controller.delete_product(delete_router)
